@@ -33,7 +33,7 @@ if "cum_cite" not in st.session_state:
 with st.sidebar.form("Parameters"):
     choice2 = st.text_input("Choose to see trends for (free choice):", value="None", placeholder="None")
     date_start = st.text_input("Choose date from which to collect articles in YYYY-MM-DD format", value="2020-01-01")
-    submit = st.form_submit_button("Get trends!")
+    submit = st.form_submit_button("Find articles!")
 
 if submit:
     st.session_state.sc_choice = choice2
