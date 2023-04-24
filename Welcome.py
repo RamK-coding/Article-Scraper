@@ -8,7 +8,7 @@ import streamlit as st
 import collections
 
 st.set_page_config(layout="wide", initial_sidebar_state='expanded')
-st.title("Article-Scraper (based on a DIPAT component)")
+st.title("Scientific-Article scraper (based on a DIPAT component)")
 st.caption(":blue[Created by Ram Kamath]")
 
 if "run" not in st.session_state:
