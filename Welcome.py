@@ -31,7 +31,8 @@ if "cum_cite" not in st.session_state:
     st.session_state.cum_cite = pd.DataFrame()
 
 with st.sidebar.form("Parameters"):
-    choice2 = st.text_input("Choose to see trends for (free choice):", value="None", placeholder="None")
+    choice2 = st.text_input("Find articles for:", value="None", placeholder="None")
+    num = st.number_input("Get links to these many articles", value=25)
     date_start = st.text_input("Choose date from which to collect articles in YYYY-MM-DD format", value="2020-01-01")
     submit = st.form_submit_button("Find articles!")
 
@@ -166,8 +167,8 @@ with fig2:
         pass
 
 try:
-    st.markdown("**:red[Top 25 most-cited publications]**")
-    df = st.session_state.articles.sort_values("citations", ascending=False)[0:25].copy()
+    st.markdown(f"**:red[Top {num} most-cited publications]**")
+    df = st.session_state.articles.sort_values("citations", ascending=False)[0:num].copy()
     df = df[["titles","citations","doi"]]
     df.set_index("titles", inplace=True)
     st.dataframe(df,use_container_width=True )
@@ -175,13 +176,13 @@ except:
     pass
 
 try:
-    st.markdown("**:red[Latest 25 publications]**")
+    st.markdown(f"**:red[Latest {num} publications]**")
     df = st.session_state.articles.copy()
     df.index = pd.to_datetime(df.index)
     df.sort_index(inplace=True, ascending=False)
     df.set_index("titles", inplace=True)
     df = df[["citations","doi", "publication date"]]
-    st.dataframe(df[0:25],use_container_width=True )
+    st.dataframe(df[0:num],use_container_width=True )
 except:
     pass
 
