@@ -169,8 +169,8 @@ with fig2:
 try:
     st.markdown(f"**:red[Top {num} most-cited publications]**")
     df = st.session_state.articles.sort_values("citations", ascending=False)[0:num].copy()
-    df = df[["titles","citations","doi"]]
     df.set_index("titles", inplace=True)
+    df = df[["citations", "doi", "publication date"]]
     st.dataframe(df,use_container_width=True )
     st.download_button(label="Download list", data=df.to_csv().encode('utf-8'),file_name='Most cited publications.csv')
 except:
