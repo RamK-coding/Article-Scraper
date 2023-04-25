@@ -172,6 +172,7 @@ try:
     df = df[["titles","citations","doi"]]
     df.set_index("titles", inplace=True)
     st.dataframe(df,use_container_width=True )
+    st.download_button(label="Download list", data=df,file_name='Most cited publications.csv')
 except:
     pass
 
@@ -183,6 +184,7 @@ try:
     df.set_index("titles", inplace=True)
     df = df[["citations","doi", "publication date"]]
     st.dataframe(df[0:num],use_container_width=True )
+    st.download_button(label="Download list", data=df,file_name='Latest publications.csv')
 except:
     pass
 
