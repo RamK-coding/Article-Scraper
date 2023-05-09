@@ -8,7 +8,7 @@ import streamlit as st
 import collections
 
 st.set_page_config(layout="wide", initial_sidebar_state='expanded')
-st.title("Scientific-Article scraper (based on a DIPAT component)")
+st.title("Scientific-Article Scraper (SAS)")
 st.caption(":blue[Created by Ram Kamath]")
 
 if "run" not in st.session_state:
@@ -32,7 +32,7 @@ if "cum_cite" not in st.session_state:
 
 with st.sidebar.form("Parameters"):
     choice2 = st.text_input("Find articles for:", value="None", placeholder="None")
-    num = st.number_input("Get links to these many articles", value=25)
+    num = st.number_input("Get links to these many articles", value=25, min_value=0)
     date_start = st.text_input("Choose date from which to collect articles in YYYY-MM-DD format", value="2020-01-01")
     submit = st.form_submit_button("Find articles!")
 
