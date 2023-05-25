@@ -32,7 +32,7 @@ if "cum_cite" not in st.session_state:
 
 with st.sidebar.form("Parameters"):
     choice2 = st.text_input("Find articles for:", value="None", placeholder="None")
-    num = st.number_input("Get links to these many articles", value=25, min_value=0)
+    num = st.number_input("How many most cited articles, and latest articles do you want?", value=25, min_value=0)
     date_start = st.text_input("Choose date from which to collect articles in YYYY-MM-DD format", value="2020-01-01")
     submit = st.form_submit_button("Find articles!")
 
@@ -188,3 +188,12 @@ try:
 except:
     pass
 
+try:
+    st.markdown(f"**:red[All publications]**")
+    df = st.session_state.articles.sort_values("citations", ascending=False).copy()
+    df.set_index("titles", inplace=True)
+    df = df[["citations", "doi", "publication date"]]
+    st.dataframe(df,use_container_width=True )
+    st.download_button(label="Download list", data=df.to_csv().encode('utf-8'),file_name='Most cited publications.csv')
+except:
+    pass
