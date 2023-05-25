@@ -189,7 +189,7 @@ except:
     pass
 
 try:
-    st.markdown(f"**:red[All publications]**")
+    st.markdown(f"**:red[All publications (sorted by citations)]**")
     df = st.session_state.articles.sort_values("citations", ascending=False).copy()
     df.set_index("titles", inplace=True)
     df = df[["citations", "doi", "publication date"]]
