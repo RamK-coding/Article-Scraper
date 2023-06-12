@@ -5,7 +5,12 @@ import math
 from datetime import datetime
 import plotly.express as px
 import streamlit as st
+import streamlit.components.v1 as components
 import collections
+import networkx as nx
+from pyvis.network import Network
+import networkx.algorithms.community as nxcom
+import matplotlib.pyplot as plt
 
 st.set_page_config(layout="wide", initial_sidebar_state='expanded')
 st.title("Scientific-Article Scraper (SAS)")
@@ -44,7 +49,7 @@ if submit:
     search_unit = search_choice
 
     def data(cho):
-        df = pd.DataFrame(columns=["titles","first-author","authors", "doi", "publication date", "citations", "journal"])
+        df = pd.DataFrame(columns=["titles","first-author","authors", "institutes","doi", "publication date", "citations", "journal"])
 
         if search_unit == "Title":
             url = f"https://api.openalex.org/works?filter=title.search:{dict[cho]},type:journal-article,from_publication_date:{date_start}&select=title"
@@ -68,12 +73,14 @@ if submit:
             for i in range (0, 200):
                 try:
                     authors = []
+                    institutes = []
                     for a in range(0, len(data["results"][i]["authorships"])):
                         authors.append(data["results"][i]["authorships"][a]["author"]["display_name"])
+                        institutes.append(data["results"][i]["authorships"][a]["institutions"][0]["display_name"].split(',')[0])
                     first_author = data["results"][i]["authorships"][0]["author"]["display_name"]
                     df.loc[str(p)+"-"+str(i)] = [data["results"][i]["title"],
                                                  first_author,
-                                                 authors,
+                                                 authors,institutes,
                                                  data["results"][i]["doi"],
                                                  data["results"][i]["publication_date"],
                                                  data["results"][i]["cited_by_count"],
@@ -181,7 +188,7 @@ try:
     st.markdown(f"**:red[Top {num} most-cited publications]**")
     df = st.session_state.articles.sort_values("citations", ascending=False)[0:num].copy()
     df.set_index("titles", inplace=True)
-    df = df[["citations", "doi", "publication date"]]
+    df = df[["citations", "doi", "authors","institutes","publication date"]]
     st.dataframe(df,use_container_width=True )
     st.download_button(label="Download list", data=df.to_csv().encode('utf-8'),file_name='Most cited publications.csv')
 except:
@@ -193,18 +200,104 @@ try:
     df.index = pd.to_datetime(df.index)
     df.sort_index(inplace=True, ascending=False)
     df.set_index("titles", inplace=True)
-    df = df[["citations","doi", "publication date"]]
+    df = df[["citations","doi", "authors","institutes","publication date"]]
     st.dataframe(df[0:num],use_container_width=True )
     st.download_button(label="Download list", data=df.to_csv().encode('utf-8'),file_name='Latest publications.csv')
 except:
     pass
 
 try:
-    st.markdown(f"**:red[All publications (sorted by citations)]**")
+    st.markdown(f"**:red[All publications since {date_start} (sorted by citations)]**")
     df = st.session_state.articles.sort_values("citations", ascending=False).copy()
     df.set_index("titles", inplace=True)
-    df = df[["citations", "doi", "publication date"]]
+    df = df[["citations", "doi", "authors","institutes", "publication date"]]
     st.dataframe(df,use_container_width=True )
     st.download_button(label="Download list", data=df.to_csv().encode('utf-8'),file_name='Most cited publications.csv')
 except:
     pass
+
+def SNA(sna_series, sna_unit):
+    nodes = pd.Series()
+    for i in range (0, len(sna_series)):
+        nodes_byArticle_list = sna_series[i]
+        for x in nodes_byArticle_list:
+            list_temp=nodes_byArticle_list[:]
+            list_temp.remove(x)
+            #print(list_temp)
+            index = [x] * (len(nodes_byArticle_list) - 1)
+            ser = pd.Series(data=list_temp, index=index)
+            nodes = pd.concat([nodes,ser])
+
+    df_nodes = pd.DataFrame({"Node1":nodes.index,"Node2":nodes.values})
+    df_nodes = df_nodes[df_nodes["Node1"] != df_nodes["Node2"]]
+    df_nodes.to_csv("node1 and node2.csv")
+    sn = nx.from_pandas_edgelist(df_nodes, source = "Node1", target = "Node2")
+    #fig, ax = plt.subplots(figsize=(50, 50), dpi=600)
+    pos = nx.spring_layout(sn,k=0.15, iterations=20) # see different layout types here - https://networkx.org/documentation/latest/reference/drawing.html#module-networkx.drawing.layout
+
+    degree_centrality = [sn.degree(n) for n in sn.nodes()]  # list of degrees
+    node_list = list(sn.nodes())
+    eigenvector_degree_centrality = nx.eigenvector_centrality_numpy(sn).values()
+    betweenness_centrality= nx.betweenness_centrality(sn,normalized=True).values()
+    nodes_degrees = pd.DataFrame(list(zip(degree_centrality, eigenvector_degree_centrality,betweenness_centrality)),columns=["Degree centrality", "Eigenvector centrality", "Betweenness centrality"],index=node_list)
+
+    nx.draw(sn, pos, node_color='r', edge_color='b',with_labels=True, node_size=[v * 100 for v in degree_centrality])
+    plt.savefig("graph.png",dpi=600)
+
+    n_degrees = nodes_degrees.copy()
+    n_degrees["Degree centrality"] *= 200
+    nodes_degrees_dict = nodes_degrees["Degree centrality"].to_dict()
+    nx.set_node_attributes(sn, nodes_degrees_dict, 'size')
+
+    net = Network(height="1000px", width="100%", font_color="black")
+    net.repulsion()
+    net.from_nx(sn)
+    net.show_buttons()#(filter_=['physics'])
+
+    # Save and read graph as HTML file (on Streamlit Sharing)
+    try:
+        path = '/tmp'
+        net.save_graph(f'{path}/pyvis_graph.html')
+        HtmlFile = open(f'{path}/pyvis_graph.html', 'r', encoding='utf-8')
+
+        # Save and read graph as HTML file (locally)
+    except:
+        path = r"C:\Users\Ram.Kamath\Desktop\Article-scraper\Article-Scraper"
+        net.save_graph(f'{path}/pyvis_graph.html')
+        HtmlFile = open(f'{path}/pyvis_graph.html', 'r', encoding='utf-8')
+
+    # Load HTML file in HTML component for display on Streamlit page
+    components.html(HtmlFile.read(), height=700)
+
+
+    fig1, fig2 = st.columns(2)
+    with fig1:
+        try:
+            st.markdown(f"**:red[Top 5 most connected {sna_unit}]**")
+            fig = px.bar(nodes_degrees.sort_values(["Degree centrality"], ascending=False)["Degree centrality"][:5])
+            # fig.update_traces(stackgroup=None, fill='tozeroy')
+            fig.update_layout(height=500)
+            fig.update_xaxes(tickangle=45)
+            # fig.update_layout(legend=dict(orientation="h", yanchor="bottom", y=-0.7, xanchor="left", x=0.0))
+            st.plotly_chart(fig, use_container_width=True)
+            st.info("These are the authors with the most connections to other authors",icon="ℹ️")
+        except:
+            pass
+
+    with fig2:
+        try:
+            st.markdown(f"**:red[Top 5 most 'influential' {sna_unit}]**")
+            fig = px.bar(nodes_degrees.sort_values(["Eigenvector centrality"],ascending=False)["Eigenvector centrality"][:5])
+            # fig.update_traces(stackgroup=None, fill='tozeroy')
+            fig.update_layout(height=500)
+            fig.update_xaxes(tickangle=45)
+            # fig.update_layout(legend=dict(orientation="h", yanchor="bottom", y=-0.7, xanchor="left", x=0.0))
+            st.plotly_chart(fig, use_container_width=True)
+            st.info("These are the authors with the most connections to other very influential authors", icon="ℹ️")
+        except:
+            pass
+
+sna_authors_series = st.session_state.articles["authors"].copy()
+SNA(sna_authors_series, "authors")
+sna_insti_series = st.session_state.articles["institutes"].copy()
+SNA(sna_insti_series, "institutes")
