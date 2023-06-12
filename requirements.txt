@@ -1,13 +1,10 @@
-streamlit==1.19.0
+streamlit==1.23.1
 bs4==0.0.1
 plotly==5.15.0
 dateparser==1.1.8
-google-search-results==2.4.2
-scikit-learn==1.2.2
 lxml==4.9.2
-wordcloud==1.9.2
-transformers==4.26.1
-torch==1.13.1
+networkx == 3.1
+pyvis == 0.3.2
 
 
 
