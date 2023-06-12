@@ -34,25 +34,36 @@ with st.sidebar.form("Parameters"):
     choice2 = st.text_input("Find articles for:", value="None", placeholder="None")
     num = st.number_input("How many most cited articles, and latest articles do you want?", value=25, min_value=0)
     date_start = st.text_input("Choose date from which to collect articles in YYYY-MM-DD format", value="2020-01-01")
+    search_choice = st.selectbox("Search in", ("Title", "Abstract"))
     submit = st.form_submit_button("Find articles!")
 
 if submit:
     st.session_state.sc_choice = choice2
     dict = {f"{st.session_state.sc_choice}": f"{st.session_state.sc_choice}"}
     st.session_state.run += 1
+    search_unit = search_choice
 
     def data(cho):
         df = pd.DataFrame(columns=["titles","first-author","authors", "doi", "publication date", "citations", "journal"])
-        c = requests.get(f"https://api.openalex.org/works?filter=title.search:{dict[cho]},"
-                         f"type:journal-article,from_publication_date:{date_start}&select=title")
+
+        if search_unit == "Title":
+            url = f"https://api.openalex.org/works?filter=title.search:{dict[cho]},type:journal-article,from_publication_date:{date_start}&select=title"
+        elif search_unit == "Abstract":
+            url = f"https://api.openalex.org/works?filter=abstract.search:{dict[cho]},type:journal-article,from_publication_date:{date_start}&select=title"
+
+        c = requests.get(url=url)
         c = c.json()
         count = c["meta"]["count"]
 
         pages = math.ceil(count / 200)
         for p in range (1, pages+1):
-            r = requests.get(f"https://api.openalex.org/works?filter=title.search:{dict[st.session_state.sc_choice]},"
-                             f"type:journal-article,from_publication_date:{date_start}&page={p}&per-page=200&select=title,"
-                             "publication_date,doi,primary_location,authorships,cited_by_count")
+
+            if search_unit == "Title":
+                url_results = f"https://api.openalex.org/works?filter=title.search:{dict[st.session_state.sc_choice]},type:journal-article,from_publication_date:{date_start}&page={p}&per-page=200&select=title, publication_date,doi,primary_location,authorships,cited_by_count"
+            elif search_unit == "Abstract":
+                url_results = f"https://api.openalex.org/works?filter=abstract.search:{dict[st.session_state.sc_choice]},type:journal-article,from_publication_date:{date_start}&page={p}&per-page=200&select=title, publication_date,doi,primary_location,authorships,cited_by_count"
+
+            r = requests.get(url=url_results)
             data = r.json()
             for i in range (0, 200):
                 try:
