@@ -40,6 +40,8 @@ with st.sidebar.form("Parameters"):
     num = st.number_input("How many most cited articles, and latest articles do you want?", value=25, min_value=0)
     date_start = st.text_input("Choose date from which to collect articles in YYYY-MM-DD format", value="2020-01-01")
     search_choice = st.selectbox("Search in", ("Title", "Abstract"))
+    graph_type = st.radio("Choose which type of social network graph to draw", ("None", "Static", "Interactive"))
+    st.info("Drawing graphs takes time (interactive graphs more than static graphs), please be patient", icon="ℹ️")
     submit = st.form_submit_button("Find articles!")
 
 if submit:
@@ -232,27 +234,12 @@ def SNA(sna_series, sna_unit):
     df_nodes = df_nodes[df_nodes["Node1"] != df_nodes["Node2"]]
     df_nodes.to_csv("node1 and node2.csv")
     sn = nx.from_pandas_edgelist(df_nodes, source = "Node1", target = "Node2")
-    #fig, ax = plt.subplots(figsize=(50, 50), dpi=600)
-    pos = nx.spring_layout(sn,k=0.15, iterations=20) # see different layout types here - https://networkx.org/documentation/latest/reference/drawing.html#module-networkx.drawing.layout
 
     degree_centrality = [sn.degree(n) for n in sn.nodes()]  # list of degrees
     node_list = list(sn.nodes())
     eigenvector_degree_centrality = nx.eigenvector_centrality_numpy(sn).values()
     betweenness_centrality= nx.betweenness_centrality(sn,normalized=True).values()
     nodes_degrees = pd.DataFrame(list(zip(degree_centrality, eigenvector_degree_centrality,betweenness_centrality)),columns=["Degree centrality", "Eigenvector centrality", "Betweenness centrality"],index=node_list)
-
-    nx.draw(sn, pos, node_color='r', edge_color='b',with_labels=True, node_size=[v * 100 for v in degree_centrality])
-    plt.savefig("graph.png",dpi=600)
-
-    n_degrees = nodes_degrees.copy()
-    n_degrees["Degree centrality"] *= 200
-    nodes_degrees_dict = nodes_degrees["Degree centrality"].to_dict()
-    nx.set_node_attributes(sn, nodes_degrees_dict, 'size')
-
-    net = Network(height="1000px", width="100%", font_color="black")
-    net.repulsion()
-    net.from_nx(sn)
-    net.show_buttons()#(filter_=['physics'])
 
     fig1, fig2 = st.columns(2)
     with fig1:
@@ -282,23 +269,40 @@ def SNA(sna_series, sna_unit):
         except:
             pass
 
+    n_degrees = nodes_degrees.copy()
+    n_degrees["Degree centrality"] *= 200
+    nodes_degrees_dict = nodes_degrees["Degree centrality"].to_dict()
+    nx.set_node_attributes(sn, nodes_degrees_dict, 'size')
 
-    # Save and read graph as HTML file (on Streamlit Sharing)
-    try:
-        path = '/tmp'
-        net.save_graph(f'{path}/pyvis_graph.html')
-        HtmlFile = open(f'{path}/pyvis_graph.html', 'r', encoding='utf-8')
+    if graph_type == "Static":
+        fig, ax = plt.subplots(figsize=(50, 50), dpi=600)
+        pos = nx.spring_layout(sn, k=0.15, iterations=20)  # see different layout types here - https://networkx.org/documentation/latest/reference/drawing.html#module-networkx.drawing.layout
+        nx.draw(sn, pos, node_color='r', edge_color='b', with_labels=True, node_size=[v * 100 for v in degree_centrality])
+        st.pyplot(fig)
+        plt.savefig("graph.png", dpi=600)
 
-        # Save and read graph as HTML file (locally)
-    except:
-        path = r"C:\Users\Ram.Kamath\Desktop\Article-scraper\Article-Scraper"
-        net.save_graph(f'{path}/pyvis_graph.html')
-        HtmlFile = open(f'{path}/pyvis_graph.html', 'r', encoding='utf-8')
+    if graph_type == "Interactive":
+        net = Network(height="1000px", width="100%", font_color="black")
+        net.repulsion()
+        net.from_nx(sn)
+        net.show_buttons()  # (filter_=['physics'])
 
-    # Load HTML file in HTML component for display on Streamlit page
-    components.html(HtmlFile.read(), height=700)
+        # Save and read graph as HTML file (on Streamlit Sharing)
+        try:
+            path = '/tmp'
+            net.save_graph(f'{path}/pyvis_graph.html')
+            HtmlFile = open(f'{path}/pyvis_graph.html', 'r', encoding='utf-8')
 
-st.header(":blue[Social Network analysis]**")
+            # Save and read graph as HTML file (locally)
+        except:
+            path = r"C:\Users\Ram.Kamath\Desktop\Article-scraper\Article-Scraper"
+            net.save_graph(f'{path}/pyvis_graph.html')
+            HtmlFile = open(f'{path}/pyvis_graph.html', 'r', encoding='utf-8')
+
+        # Load HTML file in HTML component for display on Streamlit page
+        components.html(HtmlFile.read(), height=700)
+
+st.header(":blue[Social Network analysis]")
 try:
     sna_authors_series = st.session_state.articles["authors"].copy()
     SNA(sna_authors_series, "authors")
