@@ -13,7 +13,7 @@ import networkx.algorithms.community as nxcom
 import matplotlib.pyplot as plt
 
 st.set_page_config(layout="wide", initial_sidebar_state='expanded')
-st.title("Scientific-Article Scraper (SAS)")
+st.title("Scientific-Article Dashboard")
 st.caption(":blue[Created by Ram Kamath]")
 
 if "run" not in st.session_state:
@@ -41,7 +41,8 @@ with st.sidebar.form("Parameters"):
     date_start = st.text_input("Choose date from which to collect articles in YYYY-MM-DD format", value="2020-01-01")
     search_choice = st.selectbox("Search in", ("Title", "Abstract"))
     graph_type = st.radio("Choose which type of social network graph to draw", ("None", "Static", "Interactive"))
-    st.info("Drawing graphs takes time (interactive graphs more than static graphs), please be patient", icon="ℹ️")
+    st.info("Drawing graphs takes time, please be patient", icon="ℹ️")
+    st.info("Tip - if you want an interactive graph, run for a static graph first, then again for interactive", icon="ℹ️")
     submit = st.form_submit_button("Find articles!")
 
 if submit:
