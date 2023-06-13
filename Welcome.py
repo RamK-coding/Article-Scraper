@@ -110,30 +110,6 @@ if submit:
     st.session_state.article_count = date_sort(st.session_state.article_count)
     st.session_state.cite_count = date_sort(st.session_state.cite_count)
 
-    def comparison(df):
-        today = datetime.today()
-        start = datetime.strptime(date_start,"%Y-%m-%d")
-        index = pd.date_range(start.strftime("%m-%d-%Y"), today.strftime("%m-%d-%Y"), freq='M').strftime("%b-%Y").tolist()
-        comp = pd.DataFrame(index=index); comp = pd.concat([df, comp],axis=0)
-        comp = comp[~comp.index.duplicated(keep='first')]
-        comp.index = pd.to_datetime(comp.index);comp.sort_index(inplace=True);
-        comp.index = comp.index.strftime("%b-%Y")
-        if st.session_state.run >= 2:
-            if comp.index.size > st.session_state.article_count_comp.index.size:
-                l = st.session_state.article_count_comp.index.size
-                comp = comp.iloc[:l]
-            elif comp.index.size < st.session_state.article_count_comp.index.size:
-                l = comp.index.size
-                st.session_state.article_count_comp = st.session_state.article_count_comp.iloc[:l]
-        return comp
-    #st.session_state.article_count_comp.index = comp.index
-    st.session_state.article_count_comp[f"{st.session_state.sc_choice}".replace("--", "")] = comparison(st.session_state.article_count)
-    st.session_state.article_count_comp.fillna(0, inplace=True)
-    st.session_state.cum_article[f"{st.session_state.sc_choice}".replace("--", "")] = st.session_state.article_count_comp[f"{st.session_state.sc_choice}".replace("--", "")].cumsum()
-    st.session_state.cite_count_comp[f"{st.session_state.sc_choice}".replace("--", "")] = comparison(st.session_state.cite_count)
-    st.session_state.cite_count_comp.fillna(0, inplace=True)
-    st.session_state.cum_cite[f"{st.session_state.sc_choice}".replace("--", "")] = st.session_state.cite_count_comp[f"{st.session_state.sc_choice}".replace("--", "")].cumsum()
-
 st.subheader(f":blue[Scientific-article trends for {st.session_state.sc_choice}]".replace("--", ""))
 fig1, fig2 = st.columns(2)
 with fig1:
