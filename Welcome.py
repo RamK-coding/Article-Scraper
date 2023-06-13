@@ -254,6 +254,35 @@ def SNA(sna_series, sna_unit):
     net.from_nx(sn)
     net.show_buttons()#(filter_=['physics'])
 
+    fig1, fig2 = st.columns(2)
+    with fig1:
+        try:
+            st.markdown(f"**:red[Top 5 most connected {sna_unit}]**")
+            fig = px.bar(nodes_degrees.sort_values(["Degree centrality"], ascending=False)["Degree centrality"][:5])
+            # fig.update_traces(stackgroup=None, fill='tozeroy')
+            fig.update_layout(height=500)
+            fig.update_xaxes(tickangle=45)
+            # fig.update_layout(legend=dict(orientation="h", yanchor="bottom", y=-0.7, xanchor="left", x=0.0))
+            st.plotly_chart(fig, use_container_width=True)
+            st.info("These are the authors with the most connections to other authors", icon="ℹ️")
+        except:
+            pass
+
+    with fig2:
+        try:
+            st.markdown(f"**:red[Top 5 most 'influential' {sna_unit}]**")
+            fig = px.bar(
+                nodes_degrees.sort_values(["Eigenvector centrality"], ascending=False)["Eigenvector centrality"][:5])
+            # fig.update_traces(stackgroup=None, fill='tozeroy')
+            fig.update_layout(height=500)
+            fig.update_xaxes(tickangle=45)
+            # fig.update_layout(legend=dict(orientation="h", yanchor="bottom", y=-0.7, xanchor="left", x=0.0))
+            st.plotly_chart(fig, use_container_width=True)
+            st.info("These are the authors with the most connections to other very influential authors", icon="ℹ️")
+        except:
+            pass
+
+
     # Save and read graph as HTML file (on Streamlit Sharing)
     try:
         path = '/tmp'
@@ -269,34 +298,7 @@ def SNA(sna_series, sna_unit):
     # Load HTML file in HTML component for display on Streamlit page
     components.html(HtmlFile.read(), height=700)
 
-
-    fig1, fig2 = st.columns(2)
-    with fig1:
-        try:
-            st.markdown(f"**:red[Top 5 most connected {sna_unit}]**")
-            fig = px.bar(nodes_degrees.sort_values(["Degree centrality"], ascending=False)["Degree centrality"][:5])
-            # fig.update_traces(stackgroup=None, fill='tozeroy')
-            fig.update_layout(height=500)
-            fig.update_xaxes(tickangle=45)
-            # fig.update_layout(legend=dict(orientation="h", yanchor="bottom", y=-0.7, xanchor="left", x=0.0))
-            st.plotly_chart(fig, use_container_width=True)
-            st.info("These are the authors with the most connections to other authors",icon="ℹ️")
-        except:
-            pass
-
-    with fig2:
-        try:
-            st.markdown(f"**:red[Top 5 most 'influential' {sna_unit}]**")
-            fig = px.bar(nodes_degrees.sort_values(["Eigenvector centrality"],ascending=False)["Eigenvector centrality"][:5])
-            # fig.update_traces(stackgroup=None, fill='tozeroy')
-            fig.update_layout(height=500)
-            fig.update_xaxes(tickangle=45)
-            # fig.update_layout(legend=dict(orientation="h", yanchor="bottom", y=-0.7, xanchor="left", x=0.0))
-            st.plotly_chart(fig, use_container_width=True)
-            st.info("These are the authors with the most connections to other very influential authors", icon="ℹ️")
-        except:
-            pass
-
+st.header(":blue[Social Network analysis]**")
 try:
     sna_authors_series = st.session_state.articles["authors"].copy()
     SNA(sna_authors_series, "authors")
