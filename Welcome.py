@@ -40,7 +40,7 @@ with st.sidebar.form("Parameters"):
     num = st.number_input("How many most cited articles, and latest articles do you want?", value=25, min_value=0)
     date_start = st.text_input("Choose date from which to collect articles in YYYY-MM-DD format", value="2020-01-01")
     search_choice = st.selectbox("Search in", ("Title", "Abstract"))
-    graph_type = st.radio("Choose which type of social network graph to draw", ("None", "Static", "Interactive"))
+    #graph_type = st.radio("Choose which type of social network graph to draw", ("None", "Static", "Interactive"))
     st.info("Drawing graphs takes time, please be patient", icon="ℹ️")
     st.info("Tip - if you want an interactive graph, run for a static graph first, then again for interactive", icon="ℹ️")
     submit = st.form_submit_button("Find articles!")
@@ -251,33 +251,33 @@ def SNA(sna_series, sna_unit):
     nodes_degrees_dict = nodes_degrees["Degree centrality"].to_dict()
     nx.set_node_attributes(sn, nodes_degrees_dict, 'size')
 
-    if graph_type == "Static":
-        fig, ax = plt.subplots(figsize=(50, 50), dpi=600)
-        pos = nx.spring_layout(sn, k=0.15, iterations=20)  # see different layout types here - https://networkx.org/documentation/latest/reference/drawing.html#module-networkx.drawing.layout
-        nx.draw(sn, pos, node_color='r', edge_color='b', with_labels=True, node_size=[v * 100 for v in degree_centrality])
-        st.pyplot(fig)
-        plt.savefig("graph.png", dpi=600)
+#    if graph_type == "Static":
+#        fig, ax = plt.subplots(figsize=(50, 50), dpi=600)
+#        pos = nx.spring_layout(sn, k=0.15, iterations=20)  # see different layout types here - https://networkx.org/documentation/latest/reference/drawing.html#module-networkx.drawing.layout
+#        nx.draw(sn, pos, node_color='r', edge_color='b', with_labels=True, node_size=[v * 100 for v in degree_centrality])
+#        st.pyplot(fig)
+#        plt.savefig("graph.png", dpi=600)
 
-    if graph_type == "Interactive":
-        net = Network(height="1000px", width="100%", font_color="black")
-        net.repulsion()
-        net.from_nx(sn)
-        net.show_buttons()  # (filter_=['physics'])
+    #if graph_type == "Interactive":
+    #    net = Network(height="1000px", width="100%", font_color="black")
+    #    net.repulsion()
+    #    net.from_nx(sn)
+    #    net.show_buttons()  # (filter_=['physics'])
 
         # Save and read graph as HTML file (on Streamlit Sharing)
-        try:
-            path = '/tmp'
-            net.save_graph(f'{path}/pyvis_graph.html')
-            HtmlFile = open(f'{path}/pyvis_graph.html', 'r', encoding='utf-8')
+    #    try:
+    #        path = '/tmp'
+    #        net.save_graph(f'{path}/pyvis_graph.html')
+    #        HtmlFile = open(f'{path}/pyvis_graph.html', 'r', encoding='utf-8')
 
             # Save and read graph as HTML file (locally)
-        except:
-            path = r"C:\Users\Ram.Kamath\Desktop\Article-scraper\Article-Scraper"
-            net.save_graph(f'{path}/pyvis_graph.html')
-            HtmlFile = open(f'{path}/pyvis_graph.html', 'r', encoding='utf-8')
+    #    except:
+    #        path = r"C:\Users\Ram.Kamath\Desktop\Article-scraper\Article-Scraper"
+    #        net.save_graph(f'{path}/pyvis_graph.html')
+    #        HtmlFile = open(f'{path}/pyvis_graph.html', 'r', encoding='utf-8')
 
         # Load HTML file in HTML component for display on Streamlit page
-        components.html(HtmlFile.read(), height=700)
+    #    components.html(HtmlFile.read(), height=700)
 
 st.header(":blue[Social Network analysis]")
 
