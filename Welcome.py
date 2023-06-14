@@ -280,10 +280,8 @@ def SNA(sna_series, sna_unit):
         components.html(HtmlFile.read(), height=700)
 
 st.header(":blue[Social Network analysis]")
-try:
-    sna_authors_series = st.session_state.articles["authors"].copy()
-    SNA(sna_authors_series, "authors")
-    sna_insti_series = st.session_state.articles["institutes"].copy()
-    SNA(sna_insti_series, "institutes")
-except:
-    pass
+
+sna_authors_series = st.session_state.articles["authors"].copy()
+SNA(sna_authors_series, "authors")
+sna_insti_series = st.session_state.articles["institutes"].copy()
+SNA(sna_insti_series, "institutes")
