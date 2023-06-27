@@ -1,12 +1,16 @@
 import numpy as np
 import pandas as pd
 import requests
+from datetime import datetime
 import math
 import plotly.express as px
 import streamlit as st
+import streamlit.components.v1 as components
 import collections
 import networkx as nx
+import networkx.algorithms.community as nxcom
 from pyvis.network import Network
+import matplotlib.pyplot as plt
 
 st.set_page_config(layout="wide", initial_sidebar_state='expanded')
 st.title("Scientific-Article Dashboard")
@@ -37,7 +41,6 @@ with st.sidebar.form("Parameters"):
     date_start = st.text_input("Choose date from which to collect articles in YYYY-MM-DD format", value="2020-01-01")
     search_choice = st.selectbox("Search in", ("Title", "Abstract"))
     graph_gen = st.radio("Generate social network graphs?", ("No", "Yes"))
-    graph_path = st.text_input("Enter path to save graph")
     submit = st.form_submit_button("Find articles!")
 
 if submit:
@@ -250,9 +253,8 @@ def SNA(sna_series, sna_unit):
         net.repulsion()
         net.from_nx(sn)
         net.show_buttons()  # (filter_=['physics'])
-        #local_path = f{graph_path}
-        path = f"{graph_path}"
-        net.save_graph(f'{path}/{st.session_state.sc_choice}_{sna_unit}_graph.html'.replace("--", ""))
+        path = r"C:\Users\Ram.Kamath\Desktop\DIPAT"
+        net.save_graph(f'{path}/{choice}_{sna_unit}_graph.html'.replace("--", ""))
 
 #    if graph_type == "Static":
 #        fig, ax = plt.subplots(figsize=(50, 50), dpi=600)
