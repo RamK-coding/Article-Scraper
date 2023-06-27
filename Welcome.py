@@ -248,14 +248,6 @@ def SNA(sna_series, sna_unit):
     nodes_degrees_dict = nodes_degrees["Degree centrality"].to_dict()
     nx.set_node_attributes(sn, nodes_degrees_dict, 'size')
 
-    if graph_gen == "Yes":
-        net = Network(height="1000px", width="100%", font_color="black")
-        net.repulsion()
-        net.from_nx(sn)
-        net.show_buttons()  # (filter_=['physics'])
-        path = r"C:\Users\Ram.Kamath\Desktop\DIPAT"
-        net.save_graph(f'{path}/{choice}_{sna_unit}_graph.html'.replace("--", ""))
-
 #    if graph_type == "Static":
 #        fig, ax = plt.subplots(figsize=(50, 50), dpi=600)
 #        pos = nx.spring_layout(sn, k=0.15, iterations=20)  # see different layout types here - https://networkx.org/documentation/latest/reference/drawing.html#module-networkx.drawing.layout
