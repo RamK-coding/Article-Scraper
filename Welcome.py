@@ -251,7 +251,7 @@ def SNA(sna_series, sna_unit):
         net.from_nx(sn)
         net.show_buttons()  # (filter_=['physics'])
         #local_path = f{graph_path}
-        path = rf"{graph_path}"
+        path = f"{graph_path}"
         net.save_graph(f'{path}/{st.session_state.sc_choice}_{sna_unit}_graph.html'.replace("--", ""))
 
 #    if graph_type == "Static":
