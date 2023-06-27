@@ -1,16 +1,12 @@
 import numpy as np
 import pandas as pd
 import requests
-from datetime import datetime
 import math
 import plotly.express as px
 import streamlit as st
-import streamlit.components.v1 as components
 import collections
 import networkx as nx
-import networkx.algorithms.community as nxcom
 from pyvis.network import Network
-import matplotlib.pyplot as plt
 
 st.set_page_config(layout="wide", initial_sidebar_state='expanded')
 st.title("Scientific-Article Dashboard")
@@ -40,14 +36,12 @@ with st.sidebar.form("Parameters"):
     num = st.number_input("How many most cited articles, and latest articles do you want?", value=25, min_value=0)
     date_start = st.text_input("Choose date from which to collect articles in YYYY-MM-DD format", value="2020-01-01")
     search_choice = st.selectbox("Search in", ("Title", "Abstract"))
-    #graph_type = st.radio("Choose which type of social network graph to draw", ("None", "Static", "Interactive"))
-    #st.info("Drawing graphs takes time, please be patient", icon="ℹ️")
-    #st.info("Tip - if you want an interactive graph, run for a static graph first, then again for interactive", icon="ℹ️")
+    graph_gen = st.radio("Generate social network graphs?", ("No", "Yes"))
+    graph_path = st.text_input("Enter path to save graph")
     submit = st.form_submit_button("Find articles!")
 
 if submit:
     st.session_state.sc_choice = choice2
-    dict = {f"{st.session_state.sc_choice}": f"{st.session_state.sc_choice}"}
     st.session_state.run += 1
     search_unit = search_choice
 
@@ -55,9 +49,9 @@ if submit:
         df = pd.DataFrame(columns=["titles","first-author","authors", "institutes","doi", "publication date", "citations", "journal"])
 
         if search_unit == "Title":
-            url = f"https://api.openalex.org/works?filter=title.search:{dict[cho]},type:journal-article,from_publication_date:{date_start}&select=title"
+            url = f"https://api.openalex.org/works?filter=title.search:{cho},type:journal-article,from_publication_date:{date_start}&select=title"
         elif search_unit == "Abstract":
-            url = f"https://api.openalex.org/works?filter=abstract.search:{dict[cho]},type:journal-article,from_publication_date:{date_start}&select=title"
+            url = f"https://api.openalex.org/works?filter=abstract.search:{cho},type:journal-article,from_publication_date:{date_start}&select=title"
 
         c = requests.get(url=url)
         c = c.json()
@@ -67,9 +61,9 @@ if submit:
         for p in range (1, pages+1):
 
             if search_unit == "Title":
-                url_results = f"https://api.openalex.org/works?filter=title.search:{dict[st.session_state.sc_choice]},type:journal-article,from_publication_date:{date_start}&page={p}&per-page=200&select=title, publication_date,doi,primary_location,authorships,cited_by_count"
+                url_results = f"https://api.openalex.org/works?filter=title.search:{st.session_state.sc_choice},type:journal-article,from_publication_date:{date_start}&page={p}&per-page=200&select=title, publication_date,doi,primary_location,authorships,cited_by_count"
             elif search_unit == "Abstract":
-                url_results = f"https://api.openalex.org/works?filter=abstract.search:{dict[st.session_state.sc_choice]},type:journal-article,from_publication_date:{date_start}&page={p}&per-page=200&select=title, publication_date,doi,primary_location,authorships,cited_by_count"
+                url_results = f"https://api.openalex.org/works?filter=abstract.search:{st.session_state.sc_choice},type:journal-article,from_publication_date:{date_start}&page={p}&per-page=200&select=title, publication_date,doi,primary_location,authorships,cited_by_count"
 
             r = requests.get(url=url_results)
             data = r.json()
@@ -250,6 +244,15 @@ def SNA(sna_series, sna_unit):
     n_degrees["Degree centrality"] *= 200
     nodes_degrees_dict = nodes_degrees["Degree centrality"].to_dict()
     nx.set_node_attributes(sn, nodes_degrees_dict, 'size')
+
+    if graph_gen == "Yes":
+        net = Network(height="1000px", width="100%", font_color="black")
+        net.repulsion()
+        net.from_nx(sn)
+        net.show_buttons()  # (filter_=['physics'])
+        #local_path = f{graph_path}
+        path = rf"{graph_path}"
+        net.save_graph(f'{path}/{st.session_state.sc_choice}_{sna_unit}_graph.html'.replace("--", ""))
 
 #    if graph_type == "Static":
 #        fig, ax = plt.subplots(figsize=(50, 50), dpi=600)
