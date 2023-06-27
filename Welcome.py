@@ -40,7 +40,7 @@ with st.sidebar.form("Parameters"):
     num = st.number_input("How many most cited articles, and latest articles do you want?", value=25, min_value=0)
     date_start = st.text_input("Choose date from which to collect articles in YYYY-MM-DD format", value="2020-01-01")
     search_choice = st.selectbox("Search in", ("Title", "Abstract"))
-    graph_gen = st.radio("Generate social network graphs?", ("No", "Yes"))
+    #graph_gen = st.radio("Generate social network graphs?", ("No", "Yes"))
     submit = st.form_submit_button("Find articles!")
 
 if submit:
