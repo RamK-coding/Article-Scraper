@@ -139,7 +139,7 @@ if submit:
         st.session_state.articles = data(st.session_state.sc_choice)
         st.session_state.articles.drop_duplicates(subset='titles',inplace=True)
         if type_choice != "all":
-            st.session_state.articles = st.session_state.articles[st.session_state.articles["Type"] == type_choice]
+            st.session_state.articles = st.session_state.articles[st.session_state.articles["type"] == type_choice]
         if OA_choice == "Yes":
             st.session_state.articles = st.session_state.articles[st.session_state.articles["Open access?"] == True]
         st.session_state.articles.set_index(np.arange(0,len(st.session_state.articles)), inplace=True)
@@ -149,7 +149,7 @@ if submit:
         df["publication date"] = pd.to_datetime(df["publication date"])
         df["publication date"] = df["publication date"].apply(lambda x: x.strftime("%b-%Y"))
         df.set_index("publication date", inplace = True)
-        st.session_state.article_count = df.groupby([df.index]).count()["titles"]
+        st.session_state.article_count = df.groupby(df.index).count()["titles"]
         st.session_state.cite_count = df.groupby(df.index).sum()["citations"]
     except:
         pass
@@ -265,7 +265,7 @@ if submit:
         st.markdown(f"**:red[All publications since {date_start} (sorted by citations)]**")
         df = st.session_state.articles.sort_values("citations", ascending=False).copy()
         df.set_index("titles", inplace=True)
-        df = df[["citations", "doi", "authors", "institutes", "publication date"]]
+        df = df[["citations", "doi", "authors", "institutes", "publication date", "type"]]
         st.dataframe(df, use_container_width=True)
         st.download_button(label="Download data-table", data=df.to_csv().encode('utf-8'),file_name='All publications.csv')
     except:
