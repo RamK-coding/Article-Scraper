@@ -36,6 +36,7 @@ with st.sidebar.form("Parameters"):
                                                          "Hydrogen aircraft", "Hybrid-Electric aircraft", "UAM", "--eVTOL",
                                                          "The Metaverse","Generative AI"))
     choice2 = st.text_input("Or choose to see trends for (free-choice):", value="None")
+    st.info('It is possible to use boolean search terms, e.g. (intermodal AND transport) OR (multimodal AND transport), in the free-choice search box',icon="ℹ️")
     st.info('If using the drop-down menu, please leave the free-choice search box blank, or fill it with "None"', icon="ℹ️")
     search_choice = st.selectbox("Search in", ("Title", "Abstract"))
     OA_choice = st.radio("Search only for open access publications", ("No", "Yes"))
