@@ -14,7 +14,7 @@ from pyvis.network import Network
 import matplotlib.pyplot as plt
 
 st.set_page_config(layout="wide", initial_sidebar_state='expanded')
-st.title("Scientific-Article Dashboard")
+st.title("Scientific-publication Metrics Dashboard")
 st.caption(":blue[Created by Ram Kamath]")
 
 if "sc_choice" not in st.session_state:
