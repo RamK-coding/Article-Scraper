@@ -15,7 +15,7 @@ import matplotlib.pyplot as plt
 import sys
 
 st.set_page_config(layout="wide", initial_sidebar_state='expanded')
-st.title("Scientific-publication Metrics Dashboard")
+st.title("Scientific-publication metrics Dashboard")
 st.caption(":blue[Created by Ram Kamath]")
 
 if "sc_choice" not in st.session_state:
