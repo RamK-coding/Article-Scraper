@@ -31,6 +31,8 @@ if "cum_article" not in st.session_state:
 if "cum_cite" not in st.session_state:
     st.session_state.cum_cite = pd.DataFrame()
 
+key_IEEE = st.secrets["key_IEEE"]
+
 with st.sidebar.form("Parameters"):
     api = st.selectbox("Select API to use:", ("Openalex", "IEEE"))
     choice = st.selectbox("Choose to see trends for:", ( "Multimodal transport",
