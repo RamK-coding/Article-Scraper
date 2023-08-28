@@ -276,7 +276,11 @@ if submit:
             st.session_state.articles = st.session_state.articles[st.session_state.articles["type"] == type_choice]
         if OA_choice == "Yes":
             st.session_state.articles = st.session_state.articles[st.session_state.articles["Open access?"] == "Open Access"]
-        st.session_state.articles["publication date"] = pd.to_datetime(st.session_state.articles["publication date"], format="%Y-%m-%d").dt.date
+        try:
+            st.session_state.articles["publication date"] = pd.to_datetime(st.session_state.articles["publication date"], format="%Y%m%d").dt.date
+        except:
+            st.error('Unfortunately no results found, please try changing the search term', icon="🚨")
+            sys.exit()
 
     try:
         st.session_state.articles.set_index(np.arange(0,len(st.session_state.articles)), inplace=True)
