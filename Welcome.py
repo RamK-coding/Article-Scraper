@@ -184,7 +184,7 @@ if submit:
                     url_results = f"https://ieeexploreapi.ieee.org/api/v1/search/articles?apikey={key_IEEE}&format=json&max_records=200&start_record={start_record}&sort_order=asc&sort_field=article_number&abstract={cho}&start_year={year_start}"
 
                 r = requests.get(url=url_results)
-                print(r.url)
+                st.write(r.status_code)
                 data = r.json()
                 for i in range(0, len(data["articles"])):
                     authors = []
