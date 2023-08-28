@@ -12,6 +12,7 @@ import networkx as nx
 import networkx.algorithms.community as nxcom
 from pyvis.network import Network
 import matplotlib.pyplot as plt
+import sys
 
 st.set_page_config(layout="wide", initial_sidebar_state='expanded')
 st.title("Scientific-publication Metrics Dashboard")
@@ -30,18 +31,23 @@ if "cum_article" not in st.session_state:
 if "cum_cite" not in st.session_state:
     st.session_state.cum_cite = pd.DataFrame()
 
+key_IEEE = st.secrets["key_IEEE"]
+
 with st.sidebar.form("Parameters"):
-    choice = st.selectbox("Choose to see trends for:", ( "Intermodal/Multimodal transport",
+    api = st.selectbox("Select API to use:", ("Openalex", "IEEE"))
+    choice = st.selectbox("Choose to see trends for:", ( "Multimodal transport",
                                                          "Sustainable Aviation Fuels", "--Power to liquid fuels",
                                                          "Hydrogen aircraft", "Hybrid-Electric aircraft", "UAM", "--eVTOL",
                                                          "The Metaverse","Generative AI"))
     choice2 = st.text_input("Or choose to see trends for (free-choice):", value="None")
-    st.info('It is possible to use boolean search terms, e.g. (intermodal AND transport) OR (multimodal AND transport), in the free-choice search box',icon="ℹ️")
+    st.info('For IEEE, it is possible to use simple boolean search combinations e.g. (intermodal AND transport), in the free-choice search box. '
+            'For Openalex, it is possible to use complex boolean search terms, e.g. (intermodal AND transport) OR (multimodal AND transport), in the free-choice search box.',icon="ℹ️")
     st.info('If using the drop-down menu, please leave the free-choice search box blank, or fill it with "None"', icon="ℹ️")
     search_choice = st.selectbox("Search in", ("Title", "Abstract"))
     OA_choice = st.radio("Search only for open access publications", ("No", "Yes"))
-    date_start = st.text_input("Choose date from which to collect articles in YYYY-MM-DD format(default is date from 12 months ago)", value=str(date.today() + relativedelta(months=-12)))
-    type = st.radio("Find",("All", "Only articles","Only conference papers", "Only book-chapters","Only reports"))
+    date_start = st.text_input("For Openalex, choose date from which to collect articles in YYYY-MM-DD format( default is date from 12 months ago)", value=str(date.today() + relativedelta(months=-12)))
+    year_start = st.text_input("For IEEE, choose year from which to collect articles in YYYY format( default is the peceding year)", value=str(date.today().year - 1))
+    type = st.radio("Find",("All", "Only articles","Only conference papers", "Only book-chapters","Only reports (Only with Openalex)", "Only magazines (Only with IEEE)"))
     # graph_gen = st.radio("Generate social network graphs for authors and institutions?", ("No", "Yes"))
     #name = st.text_input("If you have chosen to generate a network graph, please enter your an identifier (e.g. your name)")
     submit = st.form_submit_button("Get trends!")
@@ -62,7 +68,7 @@ if submit:
     #         sys.exit()
 
     if choice2 == "None" or choice2 == "":
-        dict = {"Intermodal/Multimodal transport": "(intermodal AND transport) OR (multimodal AND transport)",
+        dict = {"Multimodal transport": "multimodal AND transport",
                 "Sustainable Aviation Fuels": "sustainable aviation fuel",
                 "--Power to liquid fuels": "power-to-liquids",
                 "Hydrogen aircraft": "hydrogen aircraft",
@@ -76,78 +82,213 @@ if submit:
     elif choice2 != "None":
         st.session_state.sc_choice = choice2
 
-    type_dict = {"All": "all",
-                 "Only articles":"article",
-                 "Only conference papers":"proceedings-article",
-                 "Only book-chapters":"book-chapter",
-                 "Only reports":"report",
-                }
-    type_choice = type_dict[type]
+    if api == "Openalex":
+        type_dict = {"All": "all",
+                     "Only articles":"article",
+                     "Only conference papers":"proceedings-article",
+                     "Only book-chapters":"book-chapter",
+                     "Only reports (Only with Openalex)":"report",
+                    }
+        type_choice = type_dict[type]
+
+    elif api == "IEEE":
+        type_dict = {"All": "all",
+                     "Only articles": "Journals",
+                     "Only conference papers": "Conferences",
+                     "Only book-chapters": "Books",
+                     "Only magazines (Only with IEEE)": "Magazines",
+                     }
+        type_choice = type_dict[type]
+
 
     search_unit = search_choice
 
-    def data(cho):
-        df = pd.DataFrame(columns=["titles", "first-author", "authors", "institutes", "doi", "publication date", "citations",
-                                    "journal", "abstract", "concepts","Open access?","type"])
-
-        if search_unit == "Title":
-            url = f"https://api.openalex.org/works?filter=title.search:{cho},from_publication_date:{date_start}&select=title"
-        elif search_unit == "Abstract":
-            url = f"https://api.openalex.org/works?filter=abstract.search:{cho},from_publication_date:{date_start}&select=title"
-
-        c = requests.get(url=url)
-        c = c.json()
-        count = c["meta"]["count"]
-
-        pages = math.ceil(count / 200)
-        for p in range(1, pages + 1):
+    if api == "Openalex":
+        def data(cho):
+            df = pd.DataFrame(columns=["titles", "first-author", "authors", "institutes", "doi", "publication date", "citations",
+                                        "journal", "abstract", "concepts","Open access?","type"])
 
             if search_unit == "Title":
-                url_results = f"https://api.openalex.org/works?filter=title.search:{cho},from_publication_date:{date_start}&page={p}&per-page=200&select=title,publication_date,doi,primary_location,authorships,cited_by_count,concepts,abstract_inverted_index,open_access,type"
+                url = f"https://api.openalex.org/works?filter=title.search:{cho},from_publication_date:{date_start}&select=title"
             elif search_unit == "Abstract":
-                url_results = f"https://api.openalex.org/works?filter=abstract.search:{cho},from_publication_date:{date_start}&page={p}&per-page=200&select=title,publication_date,doi,primary_location,authorships,cited_by_count,concepts,abstract_inverted_index,open_access,type"
+                url = f"https://api.openalex.org/works?filter=abstract.search:{cho},from_publication_date:{date_start}&select=title"
 
-            r = requests.get(url=url_results)
-            data = r.json()
-            for i in range(0, 200):
-                try:
-                    authors = []
-                    institutes = []
-                    concepts = []
-                    for a in range(0, len(data["results"][i]["authorships"])):
-                        authors.append(data["results"][i]["authorships"][a]["author"]["display_name"])
-                        institutes.append(data["results"][i]["authorships"][a]["institutions"][0]["display_name"].split(',')[0])
-                    first_author = data["results"][i]["authorships"][0]["author"]["display_name"]
-                    for con in range(0, len(data["results"][i]["concepts"])):
-                        concepts.append(data["results"][i]["concepts"][con]["display_name"])
-                    df.loc[str(p) + "-" + str(i)] = [data["results"][i]["title"],
-                                                     first_author,
-                                                     authors, institutes,
-                                                     data["results"][i]["doi"],
-                                                     data["results"][i]["publication_date"],
-                                                     data["results"][i]["cited_by_count"],
-                                                     data["results"][i]["primary_location"]["source"]["display_name"],
-                                                     data["results"][i]["abstract_inverted_index"],
-                                                     concepts, data["results"][i]["open_access"]["is_oa"],
-                                                     data["results"][i]["type"]
-                                                     ]
-                except:
-                    pass
-            p += 1
-        return df
+            c = requests.get(url=url)
+            c = c.json()
+            count = c["meta"]["count"]
 
-    try:
+            pages = math.ceil(count / 200)
+            for p in range(1, pages + 1):
+
+                if search_unit == "Title":
+                    url_results = f"https://api.openalex.org/works?filter=title.search:{cho},from_publication_date:{date_start}&page={p}&per-page=200&select=title,publication_date,doi,primary_location,authorships,cited_by_count,concepts,abstract_inverted_index,open_access,type"
+                elif search_unit == "Abstract":
+                    url_results = f"https://api.openalex.org/works?filter=abstract.search:{cho},from_publication_date:{date_start}&page={p}&per-page=200&select=title,publication_date,doi,primary_location,authorships,cited_by_count,concepts,abstract_inverted_index,open_access,type"
+
+                r = requests.get(url=url_results)
+                data = r.json()
+                for i in range(0, 200):
+                    try:
+                        authors = []
+                        institutes = []
+                        concepts = []
+                        for a in range(0, len(data["results"][i]["authorships"])):
+                            authors.append(data["results"][i]["authorships"][a]["author"]["display_name"])
+                            institutes.append(data["results"][i]["authorships"][a]["institutions"][0]["display_name"].split(',')[0])
+                        first_author = data["results"][i]["authorships"][0]["author"]["display_name"]
+                        for con in range(0, len(data["results"][i]["concepts"])):
+                            concepts.append(data["results"][i]["concepts"][con]["display_name"])
+                        df.loc[str(p) + "-" + str(i)] = [data["results"][i]["title"],
+                                                         first_author,
+                                                         authors, institutes,
+                                                         data["results"][i]["doi"],
+                                                         data["results"][i]["publication_date"],
+                                                         data["results"][i]["cited_by_count"],
+                                                         data["results"][i]["primary_location"]["source"]["display_name"],
+                                                         data["results"][i]["abstract_inverted_index"],
+                                                         concepts, data["results"][i]["open_access"]["is_oa"],
+                                                         data["results"][i]["type"]
+                                                         ]
+                    except:
+                        pass
+                p += 1
+            return df
+
         st.session_state.articles = data(st.session_state.sc_choice)
-        st.session_state.articles.drop_duplicates(subset='titles',inplace=True)
+        st.session_state.articles.drop_duplicates(subset='titles', inplace=True)
         if type_choice != "all":
             st.session_state.articles = st.session_state.articles[st.session_state.articles["type"] == type_choice]
         if OA_choice == "Yes":
             st.session_state.articles = st.session_state.articles[st.session_state.articles["Open access?"] == True]
+        st.session_state.articles["abstract"] = st.session_state.articles["abstract"].apply(lambda x: list(x.keys()) if x is not None else [])  # getting keys of dictionary (which are the abstract words)
+
+    elif api == "IEEE":
+        def data(cho):
+            if search_unit == "Title":
+                url = f"https://ieeexploreapi.ieee.org/api/v1/search/articles?apikey={key_IEEE}&format=json&max_records=200&start_record=1&sort_order=asc&sort_field=article_number&article_title={cho}&start_year={year_start}"
+            elif search_unit == "Abstract":
+                url = f"https://ieeexploreapi.ieee.org/api/v1/search/articles?apikey={key_IEEE}&format=json&max_records=200&start_record=1&sort_order=asc&sort_field=article_number&abstract={cho}&start_year={year_start}"
+
+            c = requests.get(url=url)
+            c = c.json()
+            count = c["total_records"]
+            calls = math.ceil(count / 200)
+
+            def data_fill(start_record):
+                doi = 0
+                df = pd.DataFrame(columns=["titles", "first-author", "authors", "institutes", "doi", "publication date", "citations",
+                                            "journal", "abstract", "concepts", "Open access?", "type"])
+                if search_unit == "Title":
+                    url_results = f"https://ieeexploreapi.ieee.org/api/v1/search/articles?apikey={key_IEEE}&format=json&max_records=200&start_record={start_record}&sort_order=asc&sort_field=article_number&article_title={cho}&start_year={year_start}"
+                elif search_unit == "Abstract":
+                    url_results = f"https://ieeexploreapi.ieee.org/api/v1/search/articles?apikey={key_IEEE}&format=json&max_records=200&start_record={start_record}&sort_order=asc&sort_field=article_number&abstract={cho}&start_year={year_start}"
+
+                r = requests.get(url=url_results)
+                print(r.url)
+                data = r.json()
+                for i in range(0, len(data["articles"])):
+                    authors = []
+                    institutes = []
+                    concepts = []
+                    try:
+                        for a in range(0, len(data["articles"][i]["authors"]["authors"])):
+                            authors.append(data["articles"][i]["authors"]["authors"][a]["full_name"])
+                    except:
+                        pass
+                    try:
+                        for a in range(0, len(data["articles"][i]["authors"]["authors"])):
+                            institutes.append(data["articles"][i]["authors"]["authors"][a]["affiliation"])
+                    except:
+                        pass
+                    try:
+                        first_author = data["articles"][i]["authors"]["authors"][0]["full_name"]
+                    except:
+                        pass
+                    try:
+                        for con in range(0, len(data["articles"][i]["index_terms"]["ieee_terms"]["terms"])):
+                            concepts.append(data["articles"][i]["index_terms"]["ieee_terms"]["terms"][con])
+                    except:
+                        pass
+                    try:
+                        title = data["articles"][i]["title"]
+                    except:
+                        pass
+                    try:
+                        doi = data["articles"][i]["doi"]
+                    except:
+                        pass
+                    try:
+                        publication_date = data["articles"][i]["insert_date"]
+                    except:
+                        pass
+                    try:
+                        citations = data["articles"][i]["citing_paper_count"]
+                    except:
+                        pass
+                    try:
+                        source = data["articles"][i]["publication_title"]
+                    except:
+                        pass
+                    try:
+                        abstract = data["articles"][i]["abstract"]
+                    except:
+                        pass
+                    try:
+                        access_type = data["articles"][i]["access_type"]
+                    except:
+                        pass
+                    try:
+                        content_type = data["articles"][i]["content_type"]
+                    except:
+                        pass
+                    df.loc[str(start_record+i)] = [title,
+                                                   first_author,
+                                                   authors,
+                                                   institutes,
+                                                   doi,
+                                                   publication_date,
+                                                   citations,
+                                                   source,
+                                                   abstract,
+                                                   concepts,
+                                                   access_type,
+                                                   content_type
+                                                 ]
+                return df
+
+            df_articles = pd.DataFrame()
+
+            for x in range (1, calls+1):
+                df_temp = pd.DataFrame()
+                if x == 1:
+                    df_temp = data_fill(1)
+                elif x > 1:
+                    df_temp = data_fill(200)
+
+                df_articles = pd.concat([df_articles,df_temp])
+
+            return df_articles
+
+        date_start = year_start+"-01-01"
+
+        st.session_state.articles = data(st.session_state.sc_choice)
+        st.session_state.articles.drop_duplicates(subset='titles', inplace=True)
+        if type_choice != "all":
+            st.session_state.articles = st.session_state.articles[st.session_state.articles["type"] == type_choice]
+        if OA_choice == "Yes":
+            st.session_state.articles = st.session_state.articles[st.session_state.articles["Open access?"] == "Open Access"]
+        try:
+            st.session_state.articles["publication date"] = pd.to_datetime(st.session_state.articles["publication date"], format="%Y-%m-%d").dt.date
+        except:
+            st.error('Unfortunately no results found, please try changing the search term', icon="🚨")
+            sys.exit()
+
+    try:
         st.session_state.articles.set_index(np.arange(0,len(st.session_state.articles)), inplace=True)
-        st.session_state.articles["abstract"] = st.session_state.articles["abstract"].apply(lambda x: list(x.keys()) if x is not None else []) #getting keys of dictionary (which are the abstract words)
         st.session_state.articles.to_csv("Articles.csv")
         df = st.session_state.articles.copy()
-        df["publication date"] = pd.to_datetime(df["publication date"])
+        if api == "Openalex":
+            df["publication date"] = pd.to_datetime(df["publication date"])
         df["publication date"] = df["publication date"].apply(lambda x: x.strftime("%b-%Y"))
         df.set_index("publication date", inplace = True)
         st.session_state.article_count = df.groupby(df.index).count()["titles"]
@@ -185,6 +326,7 @@ if submit:
     st.session_state.cum_cite = st.session_state.cite_count_comp.cumsum()
 
     st.subheader(f":blue[Publication trends for {choice}]".replace("--", ""))
+    st.info("For IEEE results, the publication date refers to IEEE publication/update date. The IEEE date precedes the publication date in some cases", icon="ℹ️")
     fig1, fig2 = st.columns(2)
     with fig1:
         try:
@@ -330,7 +472,6 @@ if submit:
             for x in nodes_byArticle_list:
                 list_temp=nodes_byArticle_list[:]
                 list_temp.remove(x)
-                #print(list_temp)
                 index = [x] * (len(nodes_byArticle_list) - 1)
                 ser = pd.Series(data=list_temp, index=index)
                 nodes = pd.concat([nodes,ser])
