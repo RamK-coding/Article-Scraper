@@ -13,6 +13,7 @@ import networkx.algorithms.community as nxcom
 from pyvis.network import Network
 import matplotlib.pyplot as plt
 import sys
+from wordcloud import WordCloud, STOPWORDS
 
 st.set_page_config(layout="wide", initial_sidebar_state='expanded')
 st.title("Scientific-publication metrics Dashboard")
@@ -465,6 +466,56 @@ if submit:
     st.plotly_chart(fig, use_container_width=True)
     # except:
     #     pass
+
+    fig1, fig2 = st.columns(2)
+    special_SW = ["fuel", "airlines", "SAF", "biofuel", "refinery", "jet", "airplanes", "Take", "first", "aircraft", "green",
+                  "carbon", "flight", "plane", "airplane", "battery", "planes", "News", "news", "toward", "assessment", "Review",
+                  "airport", "emission", "emissions", "based", "study", "analysis", "technology", "Air", "air", "Aviation",
+                  "https", "doi", "Scholar", "org", "method", "result", "using", "sustainable",
+                  "Airline", "airline", "eVTOL", "Aerospace", "Announce", "Hybrid", "Electric",
+                  "electric", "hybrid", "hybrid electric", "Hybrid Electric", "Mobility", "Urban", "urban",
+                  "mobility", "Transportation", "concept"
+                  ]
+
+    with fig1:
+        try:
+            st.markdown("**:red[Word cloud from titles of top 25 cited articles]**")
+            Articles = st.session_state.articles.copy()
+            Articles.sort_values("citations", ascending=False,inplace=True)
+            text = " ".join(title for title in Articles[0:25]["titles"])
+            stopwords = set(STOPWORDS)
+            stopwords.update(st.session_state.sc_choice.replace("--", "").split())
+            stopwords.update(special_SW)
+            wordcloud = WordCloud(max_font_size=50, min_font_size=8, max_words=100, stopwords=stopwords,background_color="white").generate(text)
+            fig, ax = plt.subplots(figsize=(5, 5))
+            # plt.imshow(wordcloud, interpolation='bilinear')
+            ax.imshow(wordcloud, interpolation="bilinear")
+            plt.axis("off")
+            st.pyplot(fig)
+        except:
+            pass
+
+    with fig2:
+        try:
+            st.markdown("**:red[Word cloud from titles of latest 25 cited articles]**")
+            Articles = st.session_state.articles.copy()
+            Articles = Articles.loc[Articles["citations"] > 0]
+            Articles.index = pd.to_datetime(Articles.index)
+            Articles.sort_index(inplace=True, ascending=False)
+            Articles = Articles[0:25]
+            text = " ".join(title for title in Articles["titles"])
+            stopwords = set(STOPWORDS)
+            stopwords.update(st.session_state.sc_choice.replace("--", "").split() + special_SW)
+            wordcloud = WordCloud(max_font_size=50, min_font_size=8, max_words=100, stopwords=stopwords,background_color="white").generate(text)
+            fig, ax = plt.subplots(figsize=(5, 5))
+            # plt.imshow(wordcloud, interpolation='bilinear')
+            ax.imshow(wordcloud, interpolation="bilinear")
+            plt.axis("off")
+            st.pyplot(fig)
+
+        except:
+            pass
+
 
     def SNA(sna_series, sna_unit):
         nodes = pd.Series()
