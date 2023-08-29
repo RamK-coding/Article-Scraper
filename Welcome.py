@@ -437,6 +437,8 @@ if submit:
 
     try:
         Articles = st.session_state.articles.copy()
+        if api == "IEEE":
+            Articles["publication date"] = Articles["publication date"].astype(str)
         Articles["Year"] = Articles["publication date"].str.strip().str[:4]
         concepts_by_year = Articles.groupby("Year")["concepts"].sum()
         concepts_by_year.to_csv("concepts_by_year.csv")
@@ -454,15 +456,15 @@ if submit:
     except:
         pass
 
-    try:
-        st.markdown("**:red[Annual evolution of publishing fields]**")
-        fig = px.bar(df, x="Year", y="Value", color="Concept")
-        fig.update_layout(height=350)
-        fig.update_xaxes(tickangle=45)
-        #fig.update_layout(legend=dict(orientation="h", yanchor="bottom", y=-0.7, xanchor="left", x=0.0))
-        st.plotly_chart(fig, use_container_width=True)
-    except:
-        pass
+    # try:
+    st.markdown("**:red[Annual evolution of publishing fields]**")
+    fig = px.bar(df, x="Year", y="Value", color="Concept")
+    fig.update_layout(height=350)
+    fig.update_xaxes(tickangle=45)
+    #fig.update_layout(legend=dict(orientation="h", yanchor="bottom", y=-0.7, xanchor="left", x=0.0))
+    st.plotly_chart(fig, use_container_width=True)
+    # except:
+    #     pass
 
     def SNA(sna_series, sna_unit):
         nodes = pd.Series()
